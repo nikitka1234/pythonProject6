@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}
+    {{ news_d.title }}
+{% endblock title %}
+{% block content %}
+<h1>{{ news_d.title }}</h1> <!-- Выводите здесь title -->
+<hr>
+<p>{{ news_d.text }}</p> <!-- Выводите здесь text -->
+{% endblock content %}
