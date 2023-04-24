@@ -4,6 +4,9 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, SelectField, EmailField
 from wtforms.validators import DataRequired, Optional, Length
 
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
 
 class UserForm(FlaskForm):
     name = StringField('Имя', validators=[DataRequired(message="Поле не должо быть пустым")])
@@ -22,15 +25,24 @@ class NewNews(FlaskForm):
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'SECRET KEY'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 
-news_list = [
-    {"title": "Новость 1", "text": "текст для ноовости 1"},
-    {"title": "Новость 2", "text": "тasdkasgfniuahg"},
-    {"title": "Новость 3", "text": "тasdkasgf3246ergysdfgSGniuahg"}
-]
+db = SQLAlchemy(app)
+
+
+class News(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), unique=True, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow())
+
+
+with app.app_context():
+    db.create_all()
 
 
 def index():
+    news_list = News.query.all()
     return render_template("index.html", news_list=news_list)
 
 
@@ -54,11 +66,11 @@ def add_news():
     new = NewNews()
 
     if new.validate_on_submit():
-        title = new.title.data
-        text = new.text.data
-
-        print(title, text, sep="\n--------------\n")
-        news_list.append({"title": title, "text": text})
+        no = News()
+        no.title = new.title.data
+        no.text = new.text.data
+        db.session.add(no)
+        db.session.commit()
 
         return redirect("/")
 
@@ -70,7 +82,8 @@ def news():
 
 
 def news_detail(id):
-    return render_template("news_detail.html", news_d=news_list[id])
+    news_d = News.query.get(id)
+    return render_template("news_detail.html", news_d=news_d)
 
 
 def category(name):
